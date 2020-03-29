@@ -1,0 +1,7 @@
+{
+  "name": "AKWeather",
+  "short_name": "AKWeather",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "description": "Trivial NWS weather forecast client."
+}

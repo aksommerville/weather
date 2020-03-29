@@ -1,0 +1,95 @@
+https://www.weather.gov/documentation/services-web-api
+
+api.weather.gov
+
+Required headers:
+ - User-Agent
+
+First try, got a sensible response:
+curl -X GET 'https://api.weather.gov/alerts' -H 'User-Agent: akweather, aksommerville@gmail.com'
+...it even knows I'm in Ohio somehow.
+
+https://api.weather.gov/points/{latitude},{longitude}
+https://api.weather.gov/gridpoints/{office}/{grid X},{grid Y}/forecast
+
+Lat/long of Goodale Park is 39.9766966,-83.0070835
+"The precision of latitude/longitude points is limited to 4 decimal digits for efficiency."
+...they provide like a redirect link to get the rounded-off location. Nice "efficiency" there, government.
+"The coordinates cannot have trailing zeros in the decimal digit."
+curl -X GET 'https://api.weather.gov/points/39.9766,-83.007' -H 'User-Agent: akweather, aksommerville@gmail.com'
+Sensible response. Highlights:
+        "cwa": "ILN",
+        "forecastOffice": "https://api.weather.gov/offices/ILN",
+        "gridX": 84,
+        "gridY": 81,
+        "forecast": "https://api.weather.gov/gridpoints/ILN/84,81/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/ILN/84,81/forecast/hourly",
+        "forecastZone": "https://api.weather.gov/zones/forecast/OHZ055",
+        "county": "https://api.weather.gov/zones/county/OHC049",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/OHZ055",
+        "timeZone": "America/New_York",
+        "radarStation": "KILN"
+
+curl -X GET 'https://api.weather.gov/gridpoints/ILN/84,41/forecast' -H 'User-Agent: akweather, aksommerville@gmail.com'
+Useful data is in (properties.periods), array of:
+            {
+                "number": 1,
+                "name": "Today",
+                "startTime": "2020-03-29T08:00:00-04:00",
+                "endTime": "2020-03-29T18:00:00-04:00",
+                "isDaytime": true,
+                "temperature": 67,
+                "temperatureUnit": "F",
+                "temperatureTrend": null,
+                "windSpeed": "13 to 23 mph",
+                "windDirection": "SW",
+                "icon": "https://api.weather.gov/icons/land/day/wind_sct?size=medium",
+                "shortForecast": "Mostly Sunny",
+                "detailedForecast": "Mostly sunny, with a high near 67. Southwest wind 13 to 23 mph, with gusts as high as 44 mph."
+            },
+
+
+WeatherService.CANNED_FORECAST_RESPONSE = {
+  "@context":["https://raw.githubusercontent.com/geojson/geojson-ld/master/contexts/geojson-base.jsonld",
+    {"wx":"https://api.weather.gov/ontology#","geo":"http://www.opengis.net/ont/geosparql#","unit":"http://codes.wmo.int/common/unit/",
+    "@vocab":"https://api.weather.gov/ontology#"}],"type":"Feature","geometry":{"type":"GeometryCollection","geometries":[
+    {"type":"Point","coordinates":[-83.098037,39.0988283]},{"type":"Polygon","coordinates":[
+    [[-83.1109888,39.1108147],[-83.1134849,39.08878],[-83.08508810000001,39.0868402],[-83.0825861,39.1088746],[-83.1109888,39.1108147]]]}]},
+  "properties":{
+    "updated":"2020-03-29T10:14:39+00:00","units":"us","forecastGenerator":"BaselineForecastGenerator","generatedAt":"2020-03-29T12:52:55+00:00",
+    "updateTime":"2020-03-29T10:14:39+00:00","validTimes":"2020-03-29T04:00:00+00:00/P8DT6H","elevation":{"value":287.1216,"unitCode":"unit:m"},
+    "periods":[
+      {"number":1,"name":"Today","startTime":"2020-03-29T08:00:00-04:00","endTime":"2020-03-29T18:00:00-04:00","isDaytime":true,"temperature":67,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"13 to 23 mph","windDirection":"SW","icon":"https://api.weather.gov/icons/land/day/wind_sct?size=medium","shortForecast":"Mostly Sunny","detailedForecast":"Mostly sunny, with a high near 67. Southwest wind 13 to 23 mph, with gusts as high as 44 mph."},
+      {"number":2,"name":"Tonight","startTime":"2020-03-29T18:00:00-04:00","endTime":"2020-03-30T06:00:00-04:00","isDaytime":false,"temperature":46,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"12 to 18 mph","windDirection":"SW","icon":"https://api.weather.gov/icons/land/night/skc?size=medium","shortForecast":"Clear","detailedForecast":"Clear, with a low around 46. Southwest wind 12 to 18 mph, with gusts as high as 37 mph."},
+      //{"number":3,"name":"Monday","startTime":"2020-03-30T06:00:00-04:00","endTime":"2020-03-30T18:00:00-04:00","isDaytime":true,"temperature":57,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"10 to 15 mph","windDirection":"W","icon":"https://api.weather.gov/icons/land/day/few?size=medium","shortForecast":"Sunny","detailedForecast":"Sunny, with a high near 57. West wind 10 to 15 mph."},
+      {"number":4,"name":"Monday Night","startTime":"2020-03-30T18:00:00-04:00","endTime":"2020-03-31T06:00:00-04:00","isDaytime":false,"temperature":37,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"1 to 13 mph","windDirection":"NW","icon":"https://api.weather.gov/icons/land/night/bkn?size=medium","shortForecast":"Mostly Cloudy","detailedForecast":"Mostly cloudy, with a low around 37. Northwest wind 1 to 13 mph."},
+      {"number":5,"name":"Tuesday","startTime":"2020-03-31T06:00:00-04:00","endTime":"2020-03-31T18:00:00-04:00","isDaytime":true,"temperature":49,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"2 mph","windDirection":"NE","icon":"https://api.weather.gov/icons/land/day/bkn/rain_showers,30?size=medium","shortForecast":"Mostly Cloudy then Chance Rain Showers","detailedForecast":"A chance of rain showers after 3pm. Mostly cloudy, with a high near 49. Northeast wind around 2 mph. Chance of precipitation is 30%. New rainfall amounts less than a tenth of an inch possible."},
+      //{"number":6,"name":"Tuesday Night","startTime":"2020-03-31T18:00:00-04:00","endTime":"2020-04-01T06:00:00-04:00","isDaytime":false,"temperature":38,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"2 mph","windDirection":"N","icon":"https://api.weather.gov/icons/land/night/rain_showers,30?size=medium","shortForecast":"Chance Rain Showers","detailedForecast":"A chance of rain showers. Mostly cloudy, with a low around 38. Chance of precipitation is 30%. New rainfall amounts less than a tenth of an inch possible."},
+      {"number":7,"name":"Wednesday","startTime":"2020-04-01T06:00:00-04:00","endTime":"2020-04-01T18:00:00-04:00","isDaytime":true,"temperature":53,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"3 mph","windDirection":"NW","icon":"https://api.weather.gov/icons/land/day/bkn?size=medium","shortForecast":"Mostly Cloudy","detailedForecast":"Mostly cloudy, with a high near 53."},
+      {"number":8,"name":"Wednesday Night","startTime":"2020-04-01T18:00:00-04:00","endTime":"2020-04-02T06:00:00-04:00","isDaytime":false,"temperature":38,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"0 to 3 mph","windDirection":"NW","icon":"https://api.weather.gov/icons/land/night/sct?size=medium","shortForecast":"Partly Cloudy","detailedForecast":"Partly cloudy, with a low around 38."},
+      {"number":9,"name":"Thursday","startTime":"2020-04-02T06:00:00-04:00","endTime":"2020-04-02T18:00:00-04:00","isDaytime":true,"temperature":58,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"2 mph","windDirection":"W","icon":"https://api.weather.gov/icons/land/day/sct?size=medium","shortForecast":"Mostly Sunny","detailedForecast":"Mostly sunny, with a high near 58."},
+      {"number":10,"name":"Thursday Night","startTime":"2020-04-02T18:00:00-04:00","endTime":"2020-04-03T06:00:00-04:00","isDaytime":false,"temperature":40,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"2 mph","windDirection":"SW","icon":"https://api.weather.gov/icons/land/night/bkn?size=medium","shortForecast":"Mostly Cloudy","detailedForecast":"Mostly cloudy, with a low around 40."},
+      {"number":11,"name":"Friday","startTime":"2020-04-03T06:00:00-04:00","endTime":"2020-04-03T18:00:00-04:00","isDaytime":true,"temperature":59,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"1 to 5 mph","windDirection":"SW","icon":"https://api.weather.gov/icons/land/day/bkn?size=medium","shortForecast":"Mostly Cloudy","detailedForecast":"Mostly cloudy, with a high near 59."},
+      {"number":12,"name":"Friday Night","startTime":"2020-04-03T18:00:00-04:00","endTime":"2020-04-04T06:00:00-04:00","isDaytime":false,"temperature":38,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"3 mph","windDirection":"W","icon":"https://api.weather.gov/icons/land/night/bkn/rain_showers?size=medium","shortForecast":"Mostly Cloudy then Slight Chance Rain Showers","detailedForecast":"A slight chance of rain showers after 4am. Mostly cloudy, with a low around 38."},
+      {"number":13,"name":"Saturday","startTime":"2020-04-04T06:00:00-04:00","endTime":"2020-04-04T18:00:00-04:00","isDaytime":true,"temperature":55,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"3 mph","windDirection":"NW","icon":"https://api.weather.gov/icons/land/day/rain_showers?size=medium","shortForecast":"Slight Chance Rain Showers","detailedForecast":"A slight chance of rain showers. Mostly sunny, with a high near 55."},
+      {"number":14,"name":"Saturday Night","startTime":"2020-04-04T18:00:00-04:00","endTime":"2020-04-05T06:00:00-04:00","isDaytime":false,"temperature":35,"temperatureUnit":"F","temperatureTrend":null,"windSpeed":"3 mph","windDirection":"NW","icon":"https://api.weather.gov/icons/land/night/rain_showers?size=medium","shortForecast":"Slight Chance Rain Showers","detailedForecast":"A slight chance of rain showers. Mostly cloudy, with a low around 35."}
+    ]}};
+
+openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
+openssl pkcs12 -inkey key.pem -in certificate.pem -export -out certificate.p12
+
+Getting a ServiceWorker in local Chrome is no problem but getting it onto the phone will be trouble:
+ - ServiceWorker is only allowed to load via HTTPS, or from localhost.
+ - Self-signed certificates are not allowed for ServiceWorkers, even if you've already accepted it for the main page load.
+I think we'll need to serve the app over AWS to get it on to the phone.
+
+OK it works locally -- load the app, kill the server, refresh, and the service worker takes care of all the static stuff. Awesome!
+
+Pack Javascript and CSS.
+
+The NWS-provided icons are nice, but let's make our own and pack them up in the JS.
+What are the possible "shortForecast"?
+  - OAS doesn't enumerate them.
+  - A quick search doesn't turn up any list either.
+  - Just use some common sense.
+  Uh now that I think about it, we really don't need these icons.
